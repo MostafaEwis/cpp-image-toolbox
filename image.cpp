@@ -84,6 +84,7 @@ void Image::loadImage(){
 		
 		//free
 		image.close();
+		delete [] imageBuffer;
 
 }
 
