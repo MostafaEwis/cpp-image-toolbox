@@ -11,11 +11,13 @@ public:
 	int offset();
 	void loadImage();
 	void IFD();
-	void displayImageData();
-	void drawImage();
-	void displayImage(int *argc, char **argv);
 	void printImageData();
-	const vector<vector<vector<int>>>& getPixels();
+	void displayImageData();
+	const int getWidth();
+	const int getLength();
+	const int getSamplesPerPixel();
+	void printImageDkta();
+	vector<vector<vector<int>>>& getPixels();
 	const int getFileSize(){return imageData.size();}
 	static string lookUpTag(string hexStr);
 	string getBytes(int start, int end, bool rev);

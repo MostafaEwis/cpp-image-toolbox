@@ -2,6 +2,8 @@
 #include <vector>
 #include <string>
 #include "./image.h"
+#include "imageTools.h"
+
 using namespace std;
 //show image
 //write output images
@@ -10,6 +12,7 @@ using namespace std;
 //bileve images are stored as bit maps, e.g. a bilevel image of black and white will have 8 images each for each bit
 
 //refactor long lines
+//	void drawImage(vector<vector<vector<int>>>& pixels, int& width, int& length, int& samplesPerPixel){
 int main(int argc, char* argv[]){
 	string imagePath;
 	if(argc > 1){
@@ -22,6 +25,7 @@ int main(int argc, char* argv[]){
 	image.loadImage();
 	image.IFD();
 	image.loadPixels();
+	imageTools::drawImage(image);
 }
 
 
