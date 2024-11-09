@@ -34,7 +34,7 @@ void Image::histEqual(){
 
 		for(int y = 0; y < length; y++){
 			for(int x = 0; x < width; x++){
-				pixels[y][x][0] = 255 * cdf[pixels[y][x][0]];
+				pixels[y][x][0] = round(255 * cdf[pixels[y][x][0]]);
 			}
 		}
 		for(int y = 0; y < length; y++)
