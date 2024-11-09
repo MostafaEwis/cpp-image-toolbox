@@ -7,6 +7,7 @@
 #include <gl/glut.h>
 #include <vector>
 #include <windows.h>
+#include <cmath>
 #include "image.h"
 
 using namespace std;
@@ -28,32 +29,75 @@ namespace imageTools{
 	void plotImage(){
 		glBegin(GL_POINTS);
 		vector<vector<vector<int>>> &pixelRef = *pixels;
-		for(int y = 0; y < length; y++){
-		    for(int x = 0; x < width; x++){
-			    if(samplesPerPixel == 1){
-				    float val = (float) pixelRef[y][x][0] / 255;
-				    glColor3f(val, val, val);
-			    }else if(samplesPerPixel == 2){
-				    float val1 = (float) pixelRef[y][x][0] / 255;
-				    float val2 = (float) pixelRef[y][x][1] / 255;
-				    glColor3f(val1, val2, 0);
-			    }else if(samplesPerPixel == 3){
-				    float val1 = (float) pixelRef[y][x][0] / 255;
-				    float val2 = (float) pixelRef[y][x][1] / 255;
-				    float val3 = (float) pixelRef[y][x][2] / 255;
-				    glColor3f(val1, val2, val3);
+	//	//6 phases 
+	//	//each phase a color is on another is off another is gradual
+	//	//Y = (R × 0.299) + (G × 0.587) + (B × 0.114)
+	//	//1.40625
+	//	vector<vector<float>> rainbow(256, vector<float>(3, 0.0f));
+	//	int i = 0;
+	//	float deg = 0;
+	//	while(i < rainbow.size()){
+	//		float& r = rainbow[i][0];
+	//		float& g = rainbow[i][1];
+	//		float& b = rainbow[i][2];
+	//		float colorOfDeg = modf(deg / 60.0f, nullptr);
+	//		if(deg >= 0 && deg < 60){
+	//			r = 1;
+	//			b = colorOfDeg;
+	//			g = 0;
+	//		}else if(deg >= 60 && deg < 120){
+	//			r = 1 - colorOfDeg;
+	//			b = 1;
+	//			g = 0;
+	//		}else if(deg >= 120 && deg < 180){
+	//			r = 0;
+	//			b = 1;
+	//			g = colorOfDeg;
+	//		}else if(deg >= 180 && deg < 240){
+	//			r = 0;
+	//			b = 1 - colorOfDeg;
+	//			g = 1;
+
+	//		}else if(deg >= 240 && deg < 300){
+	//			r = colorOfDeg;
+	//			b = 0;
+	//			g = 1;
+	//		}else if(deg >= 300 && deg < 360){
+	//			r = 1;
+	//			b = 0;
+	//			g = 1 - colorOfDeg;
+	//		}
+	//		i++; 
+	//		deg+=1.40625;
+	//	}
+			for(int y = 0; y < length; y++){
+			    for(int x = 0; x < width; x++){
+				    if(samplesPerPixel == 1){
+					    //vector<float>& color = rainbow[pixelRef[y][x][0]];
+
+					    float val = (float) pixelRef[y][x][0] / 255.0f;
+					    glColor3f(val, val, val);
+				    }else if(samplesPerPixel == 2){
+					    float val1 = (float) pixelRef[y][x][0] / 255.0f;
+					    float val2 = (float) pixelRef[y][x][1] / 255.0f;
+					    glColor3f(val1, val2, 0);
+				    }else if(samplesPerPixel == 3){
+					    float val1 = (float) pixelRef[y][x][0] / 255.0f;
+					    float val2 = (float) pixelRef[y][x][1] / 255.0f;
+					    float val3 = (float) pixelRef[y][x][2] / 255.0f;
+					    glColor3f(val1, val2, val3);
+				    }
+				// reading from the first row but drawing it from the end because the origin is at bottom left 
+				    glVertex2i(x + margin / 2, length - y + margin / 2);
 			    }
-			// reading from the first row but drawing it from the end because the origin is at bottom left 
-			    glVertex2i(x + margin / 2, length - y + margin / 2);
-		    }
-		}
-		glEnd();
+			}
+			glEnd();
 	}
 	void myDisplay()
 	{
 	    glClear(GL_COLOR_BUFFER_BIT);
 	    glColor3f(1, 1, 1);
-		plotImage();	 
+	    plotImage();	 
 	    glFlush();
 	}
 

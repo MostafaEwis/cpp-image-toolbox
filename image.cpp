@@ -7,9 +7,88 @@
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
+#include <bitset>
 
 using namespace std;
 
+
+const int Image::max(){
+	return maxVal;
+}
+const int Image::min(){
+	return minVal;
+}
+
+void Image::histEqual(){
+	vector<int> freq(256, 0);
+	vector<float> cdf(256,0);
+
+	float mn = 1 / (float)(width * length);
+		for(int y = 0; y < length; y++)
+			for(int x = 0; x < width; x++)
+				freq[pixels[y][x][0]]++;
+
+		cdf[0] = (float)freq[0] * mn;
+		for(int i = 1; i < cdf.size(); i++)
+			cdf[i] = cdf[i - 1] + (float)freq[i] * mn;
+
+		for(int y = 0; y < length; y++){
+			for(int x = 0; x < width; x++){
+				pixels[y][x][0] = 255 * cdf[pixels[y][x][0]];
+			}
+		}
+		for(int y = 0; y < length; y++)
+			for(int x = 0; x < width; x++)
+				freq[pixels[y][x][0]]++;
+
+}
+const vector<vector<vector<int>>> & Image::getPixelsOrigin(){
+	return pixelsOrigin;
+}
+void Image::bitLevel(int l){
+	for(int y = 0; y < length; y++){
+		for(int x = 0; x < width; x++){
+			pixels[y][x][0] = bitset<8>{(uint8_t)pixelsOrigin[y][x][0]}[l] == 0 ? 0 : 255;
+		}
+	}
+
+}
+void Image::blur(int level){
+	if(level%2 == 0)throw invalid_argument( "blurImage: Mask dimensions should be odd" );
+	//gap = level - 1 / 2
+	//calc through the gap by traversing
+	//myltiply by 1 / level**2
+	int gap = (level - 1) / 2;
+	float div = 1.0f / (float)(level * level);
+	for(int y = 0; y < length; y++){
+		for(int x = 0; x < width; x++){
+			float val = 0.0f;
+			for(int maskY = y - gap; maskY <= y + gap; maskY++){
+				for(int maskX = x - gap; maskX <= x + gap; maskX++){
+					if(maskX < 0 || maskX >= width || maskY < 0 || maskY >= length)
+						val += minVal;	
+					else
+						val += pixelsOrigin[maskY][maskX][0];
+				}
+			}
+			val *= div; 
+			pixels[y][x][0] = round(val);
+		}
+	}
+}
+
+
+void Image::contrastStretch(int newMin, int newMax){
+	cout << "max:  " << maxVal << "   " << "min:   " << minVal << endl;
+	for(int y = 0; y < length; y++){
+		for(int x = 0; x < width; x++){
+			int &val = pixels[y][x][0];
+			val = (float)(val - minVal) / (float)(maxVal - minVal) * newMax + newMin;
+			
+		}
+	}
+
+}
 const int Image::getWidth(){
 	return width;
 }
@@ -20,20 +99,27 @@ const int Image::getSamplesPerPixel(){
 	return samplesPerPixel;
 }
 void Image::loadPixels(){
+	//you are making your vector grow multiple times which means you have to reallocate and copy memory all the time which is poo poo
+	
 	for(int stripCount = 0; stripCount < stripOffset.size(); stripCount++){
 		int stripStart = stripOffset[stripCount];
 		int stripEnd = stripStart + stripByteCount[stripCount];
 		for(int row = stripStart; row < stripEnd; row+=width * samplesPerPixel){
 			pixels.push_back({});
+			pixelsOrigin.push_back({});
 			for(int pixel = row; pixel < row + width * samplesPerPixel; pixel+=samplesPerPixel){
 				pixels[pixels.size() - 1].push_back({});
+				pixelsOrigin[pixelsOrigin.size() - 1].push_back({});
 				for(int sample = 0; sample < samplesPerPixel; sample++){
 					int sampleVal =
 						hexTools::hexToInt(getBytes(pixel + sample,
 									pixel + sample + 1, true));
 					int latestRow = pixels.size() - 1;
 					int latestPixel = pixels[latestRow].size() - 1;
+					if(sampleVal < minVal) minVal = sampleVal;
+					if(sampleVal > maxVal) maxVal = sampleVal;
 					pixels[latestRow][latestPixel].push_back(sampleVal);
+					pixelsOrigin[latestRow][latestPixel].push_back(sampleVal);
 
 				}
 			}
