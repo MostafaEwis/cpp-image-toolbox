@@ -25,7 +25,7 @@ int main(int argc, char* argv[]){
 	image.loadImage();
 	image.IFD();
 	image.loadPixels();
-	image.histEqual();
+	image.localHistEqual(3);
 	cout << image.min() << "    " << image.max() << endl;
 	imageTools::drawImage(image);
 }

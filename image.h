@@ -12,6 +12,7 @@ public:
 	void loadImage();
 	void IFD();
 	void printImageData();
+	void localHistEqual(int size);
 	void histEqual();
 	void displayImageData();
 	const int getWidth();
@@ -20,7 +21,7 @@ public:
 	const vector<vector<vector<int>>>& getPixelsOrigin();
 	const int min();
 	const int max();
-	void contrastStretch(int newMin = 0, int newMax = 0);
+	void contrastStretch(int newMin = 0, int newMax = 255, bool calcMinMax = false);
 	void blur(int level);
 	void bitLevel(int l);
 	void printImageDkta();

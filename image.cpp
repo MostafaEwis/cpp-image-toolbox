@@ -8,6 +8,7 @@
 #include <sstream>
 #include <iomanip>
 #include <bitset>
+#include <map>
 
 using namespace std;
 
@@ -19,6 +20,40 @@ const int Image::min(){
 	return minVal;
 }
 
+void Image::localHistEqual(int size){
+	//if I intially creat a map here and then clear it, this wouldn't work for some reason so I have to creat a map inside the for loop each time I iterate over a pixel
+	//the main reason I want to intialize a map once and then reuse it, is to not have to reallocate memory repeatedly, which is so expensive as far as I know.
+	//this needs to be heavely debuged but it's 5AM and I have had no sleep and I barely am.
+	
+	float mn = 1 / (float)(size * size);
+	
+	int gap = (size - 1) / 2;
+
+	for(int y = 0; y < length; y++){
+		for(int x = 0; x < width; x++){
+			map<int, int> freq;
+			map<int, float> cdf;
+			//get the frequency array;
+			for(int maskY = y - gap; maskY <= y + gap; maskY++){
+				for(int maskX = x - gap; maskX <= x + gap; maskX++){
+					if(maskY < 0 || maskY > length - 1 || maskX < 0 || maskX > width - 1) continue;
+					freq[pixelsOrigin[maskY][maskX][0]]++;
+				}
+			}
+			//get the cdf array
+			cdf[freq.begin() -> first] = (float)(freq.begin() -> second) * mn;
+			for(map<int,int>::iterator it = next(freq.begin() ,1); it != freq.end(); ++it){
+				cdf[it->first] = cdf[prev(it, 1) -> first] + (float)(it -> second) * mn;	
+			}
+				
+			pixels[y][x][0] = round(255.0f * cdf[pixelsOrigin[y][x][0]]);
+		}
+		//freq.clear();
+		//cdf.clear();
+	}
+
+
+}
 void Image::histEqual(){
 	vector<int> freq(256, 0);
 	vector<float> cdf(256,0);
@@ -26,7 +61,7 @@ void Image::histEqual(){
 	float mn = 1 / (float)(width * length);
 		for(int y = 0; y < length; y++)
 			for(int x = 0; x < width; x++)
-				freq[pixels[y][x][0]]++;
+				freq[pixelsOrigin[y][x][0]]++;
 
 		cdf[0] = (float)freq[0] * mn;
 		for(int i = 1; i < cdf.size(); i++)
@@ -34,13 +69,9 @@ void Image::histEqual(){
 
 		for(int y = 0; y < length; y++){
 			for(int x = 0; x < width; x++){
-				pixels[y][x][0] = round(255 * cdf[pixels[y][x][0]]);
+				pixels[y][x][0] = round(255.0f * cdf[pixelsOrigin[y][x][0]]);
 			}
 		}
-		for(int y = 0; y < length; y++)
-			for(int x = 0; x < width; x++)
-				freq[pixels[y][x][0]]++;
-
 }
 const vector<vector<vector<int>>> & Image::getPixelsOrigin(){
 	return pixelsOrigin;
@@ -78,13 +109,20 @@ void Image::blur(int level){
 }
 
 
-void Image::contrastStretch(int newMin, int newMax){
-	cout << "max:  " << maxVal << "   " << "min:   " << minVal << endl;
+void Image::contrastStretch(int newMin, int newMax, bool calcMinMax){
+	int min = calcMinMax? 256 : minVal;
+	int max = calcMinMax? 0 : maxVal;
+
+	for(int y = 0; y < length; y++){
+		for(int x = 0; x < width; x++){
+			if(min < pixels[y][x][0]) min = pixels[y][x][0];
+			if(max > pixels[y][x][0]) max = pixels[y][x][0];
+		}
+	}
 	for(int y = 0; y < length; y++){
 		for(int x = 0; x < width; x++){
 			int &val = pixels[y][x][0];
-			val = (float)(val - minVal) / (float)(maxVal - minVal) * newMax + newMin;
-			
+			val = (float)(val - min) / (float)(max - min) * newMax + newMin;
 		}
 	}
 
