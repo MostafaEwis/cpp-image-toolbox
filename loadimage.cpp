@@ -5,9 +5,6 @@
 #include "imageTools.h"
 
 using namespace std;
-//show image
-//write output images
-
 //notes:
 //bileve images are stored as bit maps, e.g. a bilevel image of black and white will have 8 images each for each bit
 
