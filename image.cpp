@@ -20,6 +20,183 @@ const int Image::min(){
 	return minVal;
 }
 
+void Image::overlay(Image& otherImage, bool edge){
+	//this needs to modified so that images of different width and heights can be added
+	if(width != otherImage.getWidth()|| length != otherImage.getLength()){
+		cout << "can't overlay images of different dimentions" << endl;
+		return;
+	}
+	for(int y = 0; y < length; y++){
+		for(int x = 0; x < width; x++){
+			if(edge){
+				if(otherImage.getPixels()[y][x][0] == 255){
+						pixels[y][x][0] = 255;
+						pixels[y][x][1] = 0;
+						pixels[y][x][2] = 0;
+				}
+			}else{
+				pixels[y][x][0] = pixels[y][x][0] < otherImage.getPixels()[y][x][0] ? pixels[y][x][0] : otherImage.getPixels()[y][x][0];
+
+			}
+		}
+	
+	}
+}
+void Image::laplace(){
+	int val = 0;
+	for(int y = 0; y < length; y++){
+		for(int x = 0; x < width; x++){
+			(y + 1 < length) && (val += pixelsOrigin[y + 1][x][0]);
+			(y - 1 >= 0) && (val += pixelsOrigin[y - 1][x][0]);
+			(x + 1 < width) && (val += pixelsOrigin[y][x + 1][0]);
+			(x - 1 >= 0) && (val += pixelsOrigin[y][x - 1][0]);
+			val -= 4 * pixels[y][x][0];
+
+			pixels[y][x][0] = val;
+
+			val = 0;
+		}
+	}
+}
+void Image::threshold(int thresh){
+	for(int y = 0; y < length; y++){
+		for(int x = 0; x < width; x++){
+			pixels[y][x][0] = pixelsOrigin[y][x][0] < thresh ? 0 : 255;
+		}
+	}
+
+}
+void Image::invert(){
+	for(int y = 0; y < length; y++){
+		for(int x = 0; x < width; x++){
+			pixels[y][x][0] = pixels[y][x][0] == 255? 0 : 255;
+		}
+	}
+}
+void Image::contour(int kernel, int thresh){
+	threshold(thresh);
+	erode(kernel);
+	for(int y = 0; y < length; y++)
+		for(int x = 0; x < width; x++)
+			pixels[y][x][0] = (bool)(pixels[y][x][0] == 0 && pixelsOrigin[y][x][0] == 255) ? 255 : 0;
+}
+void Image::erode(int kernel){
+	int gap = (kernel- 1) / 2;
+	for(int y = 0; y < length; y++){
+		for(int x = 0; x < width; x++){
+			if(pixelsOrigin[y][x][0] == 255){
+				int state = 1;
+				vector<int> mask;
+				for(int maskY = y - gap; maskY <= y + gap; maskY++){
+					for(int maskX = x - gap; maskX <= x + gap; maskX++){
+							if(maskX < 0 || maskX >= width || maskY < 0 || maskY >= length) continue;
+							mask.push_back(pixelsOrigin[maskY][maskX][0] == 255 ? 1 : 0);	
+					}
+				}
+				for(int e : mask) state *= e;
+				pixels[y][x][0] = (int)(bool)state * 255;
+			}
+
+		}
+	}
+}
+void Image::dilate(int kernel){
+	int gap = (kernel - 1) / 2;
+	for(int y = 0; y < length; y++){
+		for(int x = 0; x < width; x++){
+			if(pixelsOrigin[y][x][0] == 0){
+				int state = 0;
+				vector<int> mask;
+				for(int maskY = y - gap; maskY <= y + gap; maskY++){
+					for(int maskX = x - gap; maskX <= x + gap; maskX++){
+							if(maskX < 0 || maskX >= width || maskY < 0 || maskY >= length) continue;
+							mask.push_back(pixelsOrigin[maskY][maskX][0] == 255 ? 1 : 0);	
+					}
+				}
+				for(int e : mask) state += e;
+				pixels[y][x][0] = (bool)state * 255;
+			}
+
+		}
+	}
+}
+void Image::writeOrigin(){
+	for(int y = 0; y < length; y++)
+		for(int x = 0; x < width; x++)
+			pixelsOrigin[y][x][0] = pixels[y][x][0];
+}
+void Image::open(int kernel){
+	erode(kernel);
+	writeOrigin();
+	dilate(kernel);
+}
+void Image::close(int kernel){
+	dilate(kernel);
+	writeOrigin();
+	erode(kernel);
+}
+void Image::unsharp(float k){
+	//get a blured copy of current
+	//subtract from current
+	//add to origin
+	blur(3);
+	for(int y = 0; y < length; y++)
+		for(int x = 0; x < width; x++)
+			pixels[y][x][0] = pixelsOrigin[y][x][0] + (uint32_t)round(k * (pixelsOrigin[y][x][0] - pixels[y][x][0]));
+		
+}
+void Image::logTrans(float c){
+	//32*log(r);
+	for(int y = 0; y < length; y++){
+		for(int x = 0; x < width; x++){
+			pixels[y][x][0] = (uint32_t)round(c * log2(pixelsOrigin[y][x][0]));
+		}
+	}
+}
+void Image::sobel(bool h, bool v){
+	int vl = 0;
+	int vr = 0;
+	int hl = 0;	
+	int hr = 0;	
+		for(int y = 0; y < length; y++){
+			for(int x = 0; x < width; x++){
+				if(h){
+					(y + 1 < length && x + 1 < width) && (hr+= pixelsOrigin[y + 1][x + 1][0]);
+					(y - 1 > 0 && x + 1 < width) && (hr+= pixelsOrigin[y - 1][x + 1][0]);
+					(y + 1 < length && x - 1 > 0) && (hr-= pixelsOrigin[y + 1][x - 1][0]);
+					(y - 1 > 0 && x - 1 > 0) && (hr-= pixelsOrigin[y - 1][x - 1][0]);
+
+					(x + 1 < width) && (hr+= 2 * pixelsOrigin[y][x + 1][0]);
+					(x - 1 >= 0) && (hr-= 2 * pixelsOrigin[y][x - 1][0]);
+
+					(y + 1 < length && x + 1 < width) && (hl-= pixelsOrigin[y + 1][x + 1][0]);
+					(y - 1 > 0 && x + 1 < width) && (hl-= pixelsOrigin[y - 1][x + 1][0]);
+					(y + 1 < length && x - 1 > 0) && (hl+= pixelsOrigin[y + 1][x - 1][0]);
+					(y - 1 > 0 && x - 1 > 0) && (hl+= pixelsOrigin[y - 1][x - 1][0]);
+
+					(x + 1 < width) && (hl-= 2 * pixelsOrigin[y][x + 1][0]);
+					(x - 1 >= 0) && (hl+= 2 * pixelsOrigin[y][x - 1][0]);
+				}
+				if(v){
+					(y + 1 < length && x + 1 < width) && (vl -= pixelsOrigin[y + 1][x + 1][0]);
+					(y - 1 > 0 && x + 1 < width) && (vl += pixelsOrigin[y - 1][x + 1][0]);
+					(y + 1 < length && x - 1 > 0) && (vl -= pixelsOrigin[y + 1][x - 1][0]);
+					(y - 1 > 0 && x - 1 > 0) && (vl += pixelsOrigin[y - 1][x - 1][0]);
+
+					(y + 1 < length) && (vl += 2 * pixelsOrigin[y + 1][x][0]);
+					(y - 1 >= 0) && (vl -= 2 * pixelsOrigin[y - 1][x][0]);
+				}
+
+				pixels[y][x][0] = hl < hr ? hr : hl;
+				pixels[y][x][0] += vl < vr ? vr : vl;
+				vl = 0;
+				hl = 0;
+				vr = 0;
+				hr = 0;
+
+			}
+		}
+}
 void Image::localHistEqual(int size){
 	//if I intially creat a map here and then clear it, this wouldn't work for some reason so I have to creat a map inside the for loop each time I iterate over a pixel
 	//the main reason I want to intialize a map once and then reuse it, is to not have to reallocate memory repeatedly, which is so expensive as far as I know.
@@ -59,19 +236,19 @@ void Image::histEqual(){
 	vector<float> cdf(256,0);
 
 	float mn = 1 / (float)(width * length);
-		for(int y = 0; y < length; y++)
-			for(int x = 0; x < width; x++)
-				freq[pixelsOrigin[y][x][0]]++;
+	for(int y = 0; y < length; y++)
+		for(int x = 0; x < width; x++)
+			freq[pixelsOrigin[y][x][0]]++;
 
-		cdf[0] = (float)freq[0] * mn;
-		for(int i = 1; i < cdf.size(); i++)
-			cdf[i] = cdf[i - 1] + (float)freq[i] * mn;
+	cdf[0] = (float)freq[0] * mn;
+	for(int i = 1; i < cdf.size(); i++)
+		cdf[i] = cdf[i - 1] + (float)freq[i] * mn;
 
-		for(int y = 0; y < length; y++){
-			for(int x = 0; x < width; x++){
-				pixels[y][x][0] = round(255.0f * cdf[pixelsOrigin[y][x][0]]);
-			}
+	for(int y = 0; y < length; y++){
+		for(int x = 0; x < width; x++){
+			pixels[y][x][0] = round(255.0f * cdf[pixelsOrigin[y][x][0]]);
 		}
+	}
 }
 const vector<vector<vector<int>>> & Image::getPixelsOrigin(){
 	return pixelsOrigin;
@@ -85,7 +262,7 @@ void Image::bitLevel(int l){
 
 }
 void Image::blur(int level){
-	if(level%2 == 0)throw invalid_argument( "blurImage: Mask dimensions should be odd" );
+	if(level%2 == 0) throw invalid_argument( "blurImage: Mask dimensions should be odd" );
 	//gap = level - 1 / 2
 	//calc through the gap by traversing
 	//myltiply by 1 / level**2
@@ -102,27 +279,49 @@ void Image::blur(int level){
 						val += pixelsOrigin[maskY][maskX][0];
 				}
 			}
+			
+		//	cout << y << "   " << x << "   rBefore: " << val << endl;
 			val *= div; 
+		//	cout << y << "   " << x << "   rAfter: " << val << endl;
 			pixels[y][x][0] = round(val);
 		}
 	}
 }
 
-
-void Image::contrastStretch(int newMin, int newMax, bool calcMinMax){
-	int min = calcMinMax? 256 : minVal;
-	int max = calcMinMax? 0 : maxVal;
-
+void Image::toGray(){
+	if(samplesPerPixel < 2) return;
 	for(int y = 0; y < length; y++){
 		for(int x = 0; x < width; x++){
-			if(min < pixels[y][x][0]) min = pixels[y][x][0];
-			if(max > pixels[y][x][0]) max = pixels[y][x][0];
+			float rVal = 0.0f;
+			for(int s = 0; s < samplesPerPixel; s++){
+				rVal += pixelsOrigin[y][x][s];
+			}
+			pixelsOrigin[y][x][0] = round(rVal / 3.0f);
+			for(int s = 1; s < samplesPerPixel; s++){
+				pixels[y][x].pop_back();
+			}
 		}
 	}
+	samplesPerPixel = 1;
+}
+
+void Image::contrastStretch(int newMin, int newMax, bool calcMinMax){
+	//calclualte min max is used when you have alterd an image and now need to get the new minimum and maximum of the image
+	int min = calcMinMax? 256 : minVal;
+	int max = calcMinMax? 0 : maxVal;
+	if(calcMinMax){
+		for(int y = 0; y < length; y++){
+			for(int x = 0; x < width; x++){
+				if(min > pixels[y][x][0]) min = pixels[y][x][0];
+				if(max < pixels[y][x][0]) max = pixels[y][x][0];
+			}
+		}
+	}
+	cout << min << "   " << max << endl;
 	for(int y = 0; y < length; y++){
 		for(int x = 0; x < width; x++){
 			int &val = pixels[y][x][0];
-			val = (float)(val - min) / (float)(max - min) * newMax + newMin;
+			val = round((float)(val - min) / (float)(max - min) * newMax + newMin);
 		}
 	}
 
@@ -137,8 +336,8 @@ const int Image::getSamplesPerPixel(){
 	return samplesPerPixel;
 }
 void Image::loadPixels(){
-	//you are making your vector grow multiple times which means you have to reallocate and copy memory all the time which is poo poo
-	
+	//I though at first this was a very bad implementation, due to the vector growing and copying datea over and over again,
+	//but then I realized it's using the c++11 move mechnaism.	
 	for(int stripCount = 0; stripCount < stripOffset.size(); stripCount++){
 		int stripStart = stripOffset[stripCount];
 		int stripEnd = stripStart + stripByteCount[stripCount];
@@ -202,7 +401,9 @@ string Image::lookUpTag(string hexStr){
 }
 void Image::loadImage(){
 		ifstream image(path);
-
+		if(!image){
+			throw invalid_argument( "the image may not exist or is not available at the moment");
+		}
 		//get the length of file
 		int length = 0;
 		image.seekg(0, image.end);
@@ -296,3 +497,9 @@ void Image::IFD(){
 		}
 	}
 }
+Image::Image(string path):path{path}{
+	loadImage();
+	IFD();
+	loadPixels();
+}
+

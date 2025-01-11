@@ -7,25 +7,21 @@ using namespace std;
 class Image{
 public:
 
-	Image(string path);
+	Image(string path):path{path}{}
 	int offset();
 	void loadImage();
 	void IFD();
 	void printImageData();
 	void localHistEqual(int size);
 	void histEqual();
-	void sobel(bool h, bool v);
-	void logTrans(float c);
-	void threshold(int thresh);
+	void logTrans(int c);
+	void threshold(int thresh, bool origin);
 	void toGray();
 	void displayImageData();
-	void erode(int kernel);
-	void dilate(int kernel);
+	void erode(int maskSize, bool mErode);
 	void open(int maskSize);
-	void overlay(Image& otherImage, bool edge);
 	void close(int maskSize);
-	void invert();
-	void contour(int maskSize, int thresh);
+	void contour(int maskSize);
 	void writeOrigin();
 	const int getWidth();
 	const int getLength();
@@ -34,9 +30,9 @@ public:
 	const int min();
 	const int max();
 	void contrastStretch(int newMin = 0, int newMax = 255, bool calcMinMax = true);
-	void blur(int level);
+	void blur(int level, bool origin = true);
 	void bitLevel(int l);
-	void laplace();
+	void laplace(bool origin);
 	void unsharp(float k);
 	void printImageDkta();
 	vector<vector<vector<int>>>& getPixels();

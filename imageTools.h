@@ -74,7 +74,6 @@ namespace imageTools{
 			    for(int x = 0; x < width; x++){
 				    if(samplesPerPixel == 1){
 					    //vector<float>& color = rainbow[pixelRef[y][x][0]];
-
 					    float val = (float) pixelRef[y][x][0] / 255.0f;
 					    glColor3f(val, val, val);
 				    }else if(samplesPerPixel == 2){
@@ -87,7 +86,7 @@ namespace imageTools{
 					    float val3 = (float) pixelRef[y][x][2] / 255.0f;
 					    glColor3f(val1, val2, val3);
 				    }
-				// reading from the first row but drawing it from the end because the origin is at bottom left 
+				//reading from the first row but drawing it from the end because the origin is at bottom left 
 				    glVertex2i(x + margin / 2, length - y + margin / 2);
 			    }
 			}

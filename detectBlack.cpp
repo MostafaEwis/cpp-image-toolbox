@@ -20,16 +20,22 @@ int main(int argc, char* argv[]){
 	}else{
 	        throw invalid_argument("No path specified.");
 	}
+	system(imagePath.c_str());
 	Image image(imagePath);
 	cout << "min: " << image.min() << "  max: " << image.max() << endl;
-	//open the image
-	system(imagePath.c_str());
-	image.sobel(true, true);
+	image.toGray();
+	//brighten the image too much that the blackest parts are the only remaining
+	image.histEqual();
+	image.logTrans(42);
 	image.writeOrigin();
-	image.threshold(50);
-
-	imageTools::drawImage(image);
-
+	image.threshold(250, true);
+	image.invert();
+	image.writeOrigin();
+	image.open(25);
+	image.writeOrigin();
+	Image image2(imagePath);
+	image2.overlay(image);
+	imageTools::drawImage(image2);
 }
 
 
